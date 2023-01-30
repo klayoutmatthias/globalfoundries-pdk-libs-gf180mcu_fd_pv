@@ -213,7 +213,7 @@ def run_test_case(
     rule_counts = defaultdict(int)
 
     # Get switches used for each run
-    sw_file = os.path.join(Path(layout_path.parent.parent).absolute(), f"{table_name}.{SUPPORTED_SW_EXT}")
+    sw_file = os.path.join(Path(layout_path.parent).absolute(), f"{table_name}.{SUPPORTED_SW_EXT}")
 
     if os.path.exists(sw_file):
         switches = " ".join(get_switches(sw_file, table_name))
@@ -380,7 +380,7 @@ def parse_existing_rules(rule_deck_path, output_path, target_table=None):
         table_rule_file = os.path.join(rule_deck_path, "rule_decks", f"{target_table}.drc")
         if not os.path.isfile(table_rule_file):
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), table_rule_file)
-        
+
         drc_files = [table_rule_file]
 
     rules_data = list()
