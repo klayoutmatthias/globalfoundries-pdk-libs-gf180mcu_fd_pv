@@ -119,9 +119,11 @@ if FEOL
 
     # Rule SB.14a: Space from unsalicided Nplus Poly2 to unsalicided Pplus Poly2. (Unsalicided Nplus Poly2 must not fall within a square of 0.56um x 0.56um at unsalicided Pplus Poly2 corners). is 0.56µm
     logger.info("Executing rule SB.14a")
-    sb14a_l1 = sab_poly.and(nplus).separation(sab_poly.and(pplus), 0.56.um, square).polygons(0.001)
+    sb14a_butted_sab_poly = sab_poly.and(pplus).edges.inside(sab_poly.and(nplus).edges)
+    sb14a_l1 = sab_poly.and(nplus).separation(sab_poly.and(pplus), 0.56.um, square).polygons(0.001).not_interacting(sb14a_butted_sab_poly)
     sb14a_l1.output("SB.14a", "SB.14a : Space from unsalicided Nplus Poly2 to unsalicided Pplus Poly2. (Unsalicided Nplus Poly2 must not fall within a square of 0.56um x 0.56um at unsalicided Pplus Poly2 corners). : 0.56µm")
     sb14a_l1.forget
+    sb14a_butted_sab_poly.forget
 
     # Rule SB.14b: Space from unsalicided Nplus Poly2 to P-channel gate. (Unsalicided Nplus Poly2 must not fall within a square of 0.56um x 0.56um at P-channel gate corners). is 0.56µm
     logger.info("Executing rule SB.14b")
