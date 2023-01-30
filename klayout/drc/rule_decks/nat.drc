@@ -52,6 +52,7 @@ if FEOL
     if CONNECTIVITY_RULES
         logger.info("CONNECTIVITY_RULES section")
         
+        natcompsd = nat.and(comp)
         connected_nat, unconnected_nat = conn_space(natcompsd, 10, 10, transparent)
 
         # Rule NAT.6: Two or more COMPs if connected to different potential are not allowed under same NAT layer.
