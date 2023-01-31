@@ -49,8 +49,8 @@ if FEOL
     pl2_l1.output("PL.2_LV", "PL.2_LV : Gate Width (Channel Length). : 0.28µm")
     pl2_l1.forget
 
-    pl_2_MV_n = ngate_MV.edges.inside_part(comp).width(0.6.um, euclidian).polygons
-    pl_2_MV_p = pgate_MV.edges.inside_part(comp).width(0.5.um, euclidian).polygons
+    pl_2_MV_n = ngate_5V.edges.inside_part(comp).width(0.6.um, euclidian).polygons
+    pl_2_MV_p = pgate_5V.edges.inside_part(comp).width(0.5.um, euclidian).polygons
 
     pl_2_6v_n = ngate_6V.edges.inside_part(comp).width(0.7.um, euclidian).polygons
     pl_2_6v_p = pgate_6V.edges.inside_part(comp).width(0.55.um, euclidian).polygons
@@ -60,7 +60,6 @@ if FEOL
     pl2_l1 = pl_2_MV_n.or(pl_2_MV_p).or(pl_2_6v_n.or(pl_2_6v_p))
     pl2_l1.output("PL.2_MV", "PL.2_MV : Gate Width (Channel Length).")
     pl2_l1.forget
-
     pl_2_MV_n.forget
     pl_2_MV_p.forget
     pl_2_6v_n.forget
