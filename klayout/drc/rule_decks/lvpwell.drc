@@ -95,16 +95,19 @@ if FEOL
     ## to-COMP space. RES_MK length shall be coinciding with resistor length
     ## (Touching COMP each side) and width covering the width of LVPWELL.
     logger.info("Executing rule LPW.4")
-    res_lpw = lvpwell_dn.interacting(res_mk)
+    res_lpw = lvpwell_dn.and(res_mk)
     res_lpw_cont = lvpwell_dn.not(res_mk)
-    lpw4_l1 = res_lpw.not_interacting(pcomp)
+    lpw4_l1 = res_lpw.not_interacting(pcomp, 2..2)
     lpw4_l2 = res_lpw.interacting(poly2)
     lpw4_l3 = lvpwell_dn.interacting(res_lpw_cont, 2..2)
     lpw4_l = lpw4_l1.or(lpw4_l2).or(lpw4_l3)
     lpw4_l.output("LPW.4", "LPW.4 : If LVPWELL is used as resistor, it must be covered by RES_MK (for LVS
     purpose). Width of the resistor determined by LVPWELL. Length by COMP-to-COMP space. RES_MK length shall be coinciding with resistor length
     (Touching COMP each side) and width covering the width of LVPWELL.")
-
+    lpw4_l1.forget
+    lpw4_l2.forget
+    lpw4_l3.forget
+    
     # Rule LPW.5: LVPWELL resistors must be enclosed by DNWELL.
     logger.info("Executing rule LPW.5")
     lpw5_l1 = lvpwell.and(res_mk).not(dnwell)
@@ -113,15 +116,13 @@ if FEOL
 
     # Rule LPW.11: Min. (LVPWELL outside DNWELL) space to DNWELL. is 1.5µm
     logger.info("Executing rule LPW.11")
-    lpw11_l1  = lvpwell_out.separation(dnwell, 1.5.um, euclidian)
-    lpw11_l2  = lvpwell_dn.not(dnwell)
-    lpw11_l = lpw11_l1.join(lpw11_l2)
+    lpw11_l  = lvpwell.outside(dnwell).separation(dnwell, 1.5.um, euclidian).polygons(0.001)
     lpw11_l.output("LPW.11", "LPW.11 : Min. (LVPWELL outside DNWELL) space to DNWELL. : 1.5µm")
     lpw11_l.forget
 
     # Rule LPW.12: LVPWELL cannot overlap with Nwell.
     logger.info("Executing rule LPW.12")
-    lpw12_l1 = lvpwell_out.and(nwell)
+    lpw12_l1 = lvpwell.outside(dnwell).and(nwell)
     lpw12_l1.output("LPW.12", "LPW.12 : LVPWELL cannot overlap with Nwell.")
     lpw12_l1.forget
 end #FEOL
