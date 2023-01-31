@@ -21,7 +21,7 @@ if FEOL
 
     logger.info("Starting 5V SRAM derivations")
     
-    sram_mv = sramcore.overlapping(v5_xtor).overlapping(dualgate)    
+    sram_mv = sramcore.overlapping(v5_xtor)  
     nw_n_dn_sram = nwell_n_dn.and(sram_mv)
     pcomp_out_dn_sram = pcomp.outside(dnwell).and(sram_mv)
     poly_sram = poly2.and(sram_mv)
