@@ -49,14 +49,14 @@ if BEOL
         via5_4x4_loc.forget
         selected_via5.forget
                
-        # rule V5.3b is not a DRC check
+        # rule V5.3a is not a DRC check
         
-        # Rule V5.3a: metal5  overlap of via5.
-        logger.info("Executing rule V5.3a")
+        # Rule V5.3b: metal5  overlap of via5.
+        logger.info("Executing rule V5.3b")
         v53b_l1 = via5.not(metal5)
         v53b_l2 = via5.enclosed(metal5, 0.01.um, euclidian).polygons(0.001)
         v53b_l = v53b_l1.or(v53b_l2)
-        v53b_l.output("V5.3a", "V5.3a : metal5 overlap of via5 >= 0.01")
+        v53b_l.output("V5.3b", "V5.3b : metal5 overlap of via5 >= 0.01")
         v53b_l1.forget
         v53b_l2.forget
         v53b_l.forget
