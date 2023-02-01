@@ -32,7 +32,7 @@ end
 #------------ FILE SETUP -----------------
 #=========================================
 
-# optionnal for a batch launch :   klayout -b -r gf_018mcu_antenna.drc -rd input=design.gds -rd report=gf180_ant_drc.txt
+# optionnal for a batch launch :   klayout -b -r antenna.drc -rd input=design.gds -rd report=gf180mcu_antenna.lyrdb
 
 logger.info("Starting running GF180MCU Klayout antenna checks DRC runset on %s" % [$input])
 
@@ -51,77 +51,6 @@ else
     report("GF180 DRC runset", File.join(File.dirname(RBA::CellView::active.filename), "gf180mcu_antenna.lyrdb"))
 end
 
-if $thr
-    threads($thr)
-else
-    threads(16)
-end
-
-
-#=== HIER MODE ===
-deep
-logger.info("Antenna uses deep  mode.")
-
-# if $run_mode == "tiling"
-#     # use a tile size of 1mm - not used in deep mode-
-#     # tiles(500.um)
-#     # use a tile border of 10 micron:
-#     # tile_borders(10.um)
-#     tiles(1000)
-#     logger.info("Tiling  mode is enabled.")
-
-# elsif $run_mode == "deep"
-#     #=== HIER MODE ===
-#     deep
-#     logger.info("deep  mode is enabled.")
-
-# elsif $run_mode == "flat"
-#     #=== FLAT MODE ===
-#     flat
-#     logger.info("flat  mode is enabled.")
-
-# else
-#     #=== HIER MODE ===
-#     deep
-#     logger.info("flat  mode is enabled.")
-
-# end # run_mode
-
-#======================================================================================================
-#--------------------------------------- LAYER DEFINITIONS --------------------------------------------
-#======================================================================================================
-
-comp            = polygons(22,  0).merged
-dualgate        = polygons(55,  0).merged
-poly2           = polygons(30,  0).merged
-nplus           = polygons(32,  0).merged
-pplus           = polygons(31,  0).merged
-contact         = polygons(33,  0).merged
-metal1          = polygons(34,  0).merged
-via1            = polygons(35,  0).merged
-metal2          = polygons(36,  0).merged
-via2            = polygons(38,  0).merged
-metal3          = polygons(42,  0).merged
-via3            = polygons(40,  0).merged
-metal4          = polygons(46,  0).merged
-via4            = polygons(41,  0).merged
-metal5          = polygons(81,  0).merged
-via5            = polygons(82,  0).merged
-metaltop        = polygons(53,  0).merged
-fusetop         = polygons(75,  0).merged
-
-#======================================================================================================
-#--------------------------------------- LAYER DERIVATIONS --------------------------------------------
-#======================================================================================================
-
-tgate      = poly2 & comp
-thin_gate  = tgate.not(dualgate)
-thick_gate = tgate.and(dualgate)
-diode      = nplus & comp
-
-# === LAYOUT EXTENT ===
-CHIP = extent.sized(0.0)
-
 #=======================================================================================
 #------------------------------------- SWITCHES ----------------------------------------
 #=======================================================================================
@@ -129,70 +58,417 @@ CHIP = extent.sized(0.0)
 logger.info("Evaluate switches.")
 
 if $mim_option
-    MIM_OPTION = $mim_option
+  MIM_OPTION = $mim_option
 else
-    MIM_OPTION = false
+  MIM_OPTION = "B"
 end
 
 logger.info("MIM Option selected %s" % [MIM_OPTION])
 
+if $thr
+    threads($thr)
+else
+    thr ||=  Etc.nprocessors
+    threads(thr)
+end
+logger.info("Number of threads to use %s" % [$thr])
+
+#=== PRINT DETAILS ===
+logger.info("Verbose mode: #{$verbose}")
+if $verbose == "true"
+  verbose(true)
+else
+  verbose(false)
+end
+
+# === TILING MODE ===
+if $run_mode == "tiling"
+  tiles(500.um)
+  tile_borders(10.um)
+  logger.info("Tiling  mode is enabled.")
+
+elsif $run_mode == "deep"
+  #=== HIER MODE ===
+  deep
+  logger.info("deep  mode is enabled.")
+else
+  #=== FLAT MODE ===
+  flat
+  logger.info("flat  mode is enabled.")
+end # run_mode
+
 # METAL_TOP
 if $metal_top
-    METAL_TOP = $metal_top
+  METAL_TOP = $metal_top
 else
-    METAL_TOP = "9K"
-end
+  METAL_TOP = "9K"
+end # METAL_TOP
 
 logger.info("METAL_TOP Selected is %s" % [METAL_TOP])
 
-if METAL_TOP == "6K"
-    met_top_thick = 0.69.um
-
-elsif METAL_TOP == "9K"
-    met_top_thick = 0.99.um
-
-elsif METAL_TOP == "11K"
-    met_top_thick = 1.19.um
-
-elsif METAL_TOP == "30K"
-    met_top_thick = 3.035.um
-
-end #METAL_TOP
-
+# METAL_LEVEL
 if $metal_level
-    METAL_LEVEL = $metal_level
+  METAL_LEVEL = $metal_level
 else
-    METAL_LEVEL = "6LM"
-end
+  METAL_LEVEL = "5LM"
+end # METAL_LEVEL
 
 logger.info("METAL_STACK Selected is %s" % [METAL_LEVEL])
 
-if METAL_LEVEL == "6LM"
-    top_via       = via5
-    topmin1_via   = via4
-    top_metal     = metaltop
-    topmin1_metal = metal5
-elsif METAL_LEVEL == "5LM"
-    top_via       = via4
-    topmin1_via   = via3
-    top_metal     = metal5
-    topmin1_metal = metal4
-elsif METAL_LEVEL == "4LM"
-    top_via       = via3
-    topmin1_via   = via2
-    top_metal     = metal4
-    topmin1_metal = metal3
-elsif METAL_LEVEL == "3LM"
-    top_via       = via2
-    topmin1_via   = via1
-    top_metal     = metal3
-    topmin1_metal = metal2
-elsif METAL_LEVEL == "2LM"
+#================================================
+#------------- LAYERS DEFINITIONS ---------------
+#================================================
+polygons_count = 0
+logger.info("Read in polygons from layers.")
+
+def get_polygons(l, d)
+    ps = polygons(l, d)
+    return $run_mode == "deep" ? ps : ps.merged
+  end
+  
+comp           = get_polygons(22 , 0 )
+count = comp.count()
+logger.info("comp has %d polygons" % [count])
+polygons_count += count
+
+dualgate        = get_polygons(55,  0)
+count = dualgate.count()
+logger.info("dualgate has %d polygons" % [count])
+polygons_count += count
+
+poly2           = get_polygons(30,  0)
+count = poly2.count()
+logger.info("poly2 has %d polygons" % [count])
+polygons_count += count
+
+nplus           = get_polygons(32,  0)
+count = nplus.count()
+logger.info("nplus has %d polygons" % [count])
+polygons_count += count
+
+pplus           = get_polygons(31,  0)
+count = pplus.count()
+logger.info("pplus has %d polygons" % [count])
+polygons_count += count
+
+contact         = get_polygons(33,  0)
+count = contact.count()
+logger.info("contact has %d polygons" % [count])
+polygons_count += count
+
+res_mk         = get_polygons(110, 5 )
+count   = res_mk.count()
+logger.info("res_mk has %d polygons" % [count])
+polygons_count  += count
+
+if METAL_LEVEL == "2LM"
+    metal2_drawn  = get_polygons(36 , 0 )
+    count   = metal2_drawn.count()
+    logger.info("metal2_drawn has %d polygons" % [count])
+    polygons_count  += count
+  
+    metal2_dummy  = get_polygons(36 , 4 )
+    count   = metal2_dummy.count()
+    logger.info("metal2_dummy has %d polygons" % [count])
+    polygons_count  += count
+  
+    metal2        = metal2_drawn + metal2_dummy
+  
+    metal2_label  = get_polygons(36 , 10)
+    count   = metal2_label.count()
+    logger.info("metal2_label has %d polygons" % [count])
+    polygons_count  += count
+  
+    metal2_slot   = get_polygons(36 , 3 )
+    count   = metal2_slot.count()
+    logger.info("metal2_slot has %d polygons" % [count])
+    polygons_count  += count
+  
+    metal2_blk    = get_polygons(36 , 5 )
+    count   = metal2_blk.count()
+    logger.info("metal2_blk has %d polygons" % [count])
+    polygons_count  += count
+    
     top_via       = via1
-    topmin1_via   = via1
+    topmin1_via   = contact
     top_metal     = metal2
     topmin1_metal = metal1
-end #METAL_LEVEL
+    
+  else
+    metal2_drawn   = get_polygons(36 , 0 )
+    count   = metal2_drawn.count()
+    logger.info("metal2_drawn has %d polygons" % [count])
+    polygons_count  += count
+  
+    metal2_dummy   = get_polygons(36 , 4 )
+    count   = metal2_dummy.count()
+    logger.info("metal2_dummy has %d polygons" % [count])
+    polygons_count  += count
+  
+    metal2         = metal2_drawn + metal2_dummy
+  
+    metal2_label   = get_polygons(36 , 10)
+    count   = metal2_label.count()
+    logger.info("metal2_label has %d polygons" % [count])
+    polygons_count  += count
+  
+    metal2_slot    = get_polygons(36 , 3 )
+    count   = metal2_slot.count()
+    logger.info("metal2_slot has %d polygons" % [count])
+    polygons_count  += count
+  
+    metal2_blk     = get_polygons(36 , 5 )
+    count   = metal2_blk.count()
+    logger.info("metal2_blk has %d polygons" % [count])
+    polygons_count  += count
+    
+    via2           = get_polygons(38 , 0 )
+    count   = via2.count()
+    logger.info("via2 has %d polygons" % [count])
+    polygons_count  += count
+    
+    if METAL_LEVEL == "3LM"
+      metal3_drawn  = get_polygons(42 , 0 )
+      count   = metal3_drawn.count()
+      logger.info("metal3_drawn has %d polygons" % [count])
+      polygons_count  += count
+  
+      metal3_dummy  = get_polygons(42 , 4 )
+      count   = metal3_dummy.count()
+      logger.info("metal3_dummy has %d polygons" % [count])
+      polygons_count  += count
+  
+      metal3        = metal3_drawn + metal3_dummy
+  
+      metal3_label  = get_polygons(42 , 10)
+      count   = metal3_label.count()
+      logger.info("metal3_label has %d polygons" % [count])
+      polygons_count  += count
+      
+      metal3_slot   = get_polygons(42 , 3 )
+      count   = metal3_slot.count()
+      logger.info("metal3_slot has %d polygons" % [count])
+      polygons_count  += count
+  
+      metal3_blk    = get_polygons(42 , 5 )
+      count   = metal3_blk.count()
+      logger.info("metal3_blk has %d polygons" % [count])
+      polygons_count  += count
+      
+      top_via       = via2
+      topmin1_via   = via1
+      top_metal     = metal3
+      topmin1_metal = metal2
+    else
+      metal3_drawn  = get_polygons(42 , 0 )
+      count   = metal3_drawn.count()
+      logger.info("metal3_drawn has %d polygons" % [count])
+      polygons_count  += count
+  
+      metal3_dummy  = get_polygons(42 , 4 )
+      count   = metal3_dummy.count()
+      logger.info("metal3_dummy has %d polygons" % [count])
+      polygons_count  += count
+  
+      metal3        = metal3_drawn + metal3_dummy
+  
+      metal3_label  = get_polygons(42 , 10)
+      count   = metal3_label.count()
+      logger.info("metal3_label has %d polygons" % [count])
+      polygons_count  += count
+  
+      metal3_slot   = get_polygons(42 , 3 )
+      count   = metal3_slot.count()
+      logger.info("metal3_slot has %d polygons" % [count])
+      polygons_count  += count
+  
+      metal3_blk    = get_polygons(42 , 5 )
+      count   = metal3_blk.count()
+      logger.info("metal3_blk has %d polygons" % [count])
+      polygons_count  += count
+  
+      via3           = get_polygons(40 , 0 )
+  
+      if METAL_LEVEL == "4LM"
+        metal4_drawn  = get_polygons(46 , 0 )
+        count   = metal4_drawn.count()
+        logger.info("metal4_drawn has %d polygons" % [count])
+        polygons_count  += count
+  
+        metal4_dummy  = get_polygons(46 , 4 )
+        count   = metal4_dummy.count()
+        logger.info("metal4_dummy has %d polygons" % [count])
+        polygons_count  += count
+  
+        metal4        = metal4_drawn + metal4_dummy
+        
+        metal4_label  = get_polygons(46 , 10)
+        count   = metal4_label.count()
+        logger.info("metal4_label has %d polygons" % [count])
+        polygons_count  += count
+        
+        metal4_slot   = get_polygons(46 , 3 )
+        count   = metal4_slot.count()
+        logger.info("metal4_slot has %d polygons" % [count])
+        polygons_count  += count
+  
+        metal4_blk    = get_polygons(46 , 5 )
+        count   = metal4_blk.count()
+        logger.info("metal4_blk has %d polygons" % [count])
+        polygons_count  += count
+        
+        top_via       = via3
+        topmin1_via   = via2
+        top_metal     = metal4
+        topmin1_metal = metal3
+      else
+        metal4_drawn  = get_polygons(46 , 0 )
+        count   = metal4_drawn.count()
+        logger.info("metal4_drawn has %d polygons" % [count])
+        polygons_count  += count
+  
+        metal4_dummy  = get_polygons(46 , 4 )
+        count   = metal4_dummy.count()
+        logger.info("metal4_dummy has %d polygons" % [count])
+        polygons_count  += count
+  
+        metal4        = metal4_drawn + metal4_dummy
+  
+        metal4_label  = get_polygons(46 , 10)
+        count   = metal4_label.count()
+        logger.info("metal4_label has %d polygons" % [count])
+        polygons_count  += count
+  
+        metal4_slot   = get_polygons(46 , 3 )
+        count   = metal4_slot.count()
+        logger.info("metal4_slot has %d polygons" % [count])
+        polygons_count  += count
+  
+        metal4_blk    = get_polygons(46 , 5 )
+        count   = metal4_blk.count()
+        logger.info("metal4_blk has %d polygons" % [count])
+        polygons_count  += count
+  
+        via4          = get_polygons(41 , 0 )
+        count   = via4.count()
+        logger.info("via4 has %d polygons" % [count])
+        polygons_count  += count
+  
+        if METAL_LEVEL == "5LM"
+          metal5_drawn  = get_polygons(81 , 0 )
+          count   = metal5_drawn.count()
+          logger.info("metal5_drawn has %d polygons" % [count])
+          polygons_count  += count
+  
+          metal5_dummy  = get_polygons(81 , 4 )
+          count   = metal5_dummy.count()
+          logger.info("metal5_dummy has %d polygons" % [count])
+          polygons_count  += count
+  
+          metal5        = metal5_drawn + metal5_dummy
+  
+          metal5_label  = get_polygons(81 , 10)
+          count   = metal5_label.count()
+          logger.info("metal5_label has %d polygons" % [count])
+          polygons_count  += count
+        
+          metal5_slot   = get_polygons(81 , 3 )
+          count   = metal5_slot.count()
+          logger.info("metal5_slot has %d polygons" % [count])
+          polygons_count  += count
+  
+          metal5_blk    = get_polygons(81 , 5 )
+          count   = metal5_blk.count()
+          logger.info("metal5_blk has %d polygons" % [count])
+          polygons_count  += count
+  
+          top_via       = via4
+          topmin1_via   = via3
+          top_metal     = metal5
+          topmin1_metal = metal4
+        else 
+          ## 6LM
+          metal5_drawn   = get_polygons(81 , 0 )
+          count   = metal5_drawn.count()
+          logger.info("metal5_drawn has %d polygons" % [count])
+          polygons_count  += count
+  
+          metal5_dummy   = get_polygons(81 , 4 )
+          count   = metal5_dummy.count()
+          logger.info("metal5_dummy has %d polygons" % [count])
+          polygons_count  += count
+  
+          metal5         = metal5_drawn + metal5_dummy
+  
+          metal5_label   = get_polygons(81 , 10)
+          count   = metal5_label.count()
+          logger.info("metal5_label has %d polygons" % [count])
+          polygons_count  += count
+  
+          metal5_slot    = get_polygons(81 , 3 )
+          count   = metal5_slot.count()
+          logger.info("metal5_slot has %d polygons" % [count])
+          polygons_count  += count
+  
+          metal5_blk     = get_polygons(81 , 5 )
+          count   = metal5_blk.count()
+          logger.info("metal5_blk has %d polygons" % [count])
+          polygons_count  += count
+  
+          via5           = get_polygons(82 , 0 )
+          count   = via5.count()
+          logger.info("via5 has %d polygons" % [count])
+          polygons_count  += count
+  
+  
+          metaltop_drawn = get_polygons(53 , 0 )
+          count   = metaltop_drawn.count()
+          logger.info("metaltop_drawn has %d polygons" % [count])
+          polygons_count  += count
+  
+          metaltop_dummy = get_polygons(53 , 4 )
+          count   = metaltop_dummy.count()
+          logger.info("metaltop_dummy has %d polygons" % [count])
+          polygons_count  += count
+  
+          metaltop       = metaltop_drawn + metaltop_dummy
+  
+          metaltop_label = get_polygons(53 , 10)
+          count   = metaltop_label.count()
+          logger.info("metaltop_label has %d polygons" % [count])
+          polygons_count  += count
+  
+          metaltop_slot  = get_polygons(53 , 3 )
+          count   = metaltop_slot.count()
+          logger.info("metaltop_slot has %d polygons" % [count])
+          polygons_count  += count
+  
+          metalt_blk     = get_polygons(53 , 5 )
+          count   = metalt_blk.count()
+          logger.info("metalt_blk has %d polygons" % [count])
+          polygons_count  += count
+  
+          top_via       = via5
+          topmin1_via   = via4
+          top_metal     = metaltop
+          topmin1_metal = metal5
+        end
+      end
+    end
+  end
+  
+
+#======================================================================================================
+#--------------------------------------- LAYER DERIVATIONS --------------------------------------------
+#======================================================================================================
+
+tgate      = poly2.and(comp).not(res_mk)
+thin_gate  = tgate.not(dualgate)
+thick_gate = tgate.and(dualgate)
+diode      = nplus & comp
+
+# === LAYOUT EXTENT ===
+CHIP = extent.sized(0.0)
 
 #=========================================================================================================================
 #---------------------------------------------------- MAIN RUNSET --------------------------------------------------------
