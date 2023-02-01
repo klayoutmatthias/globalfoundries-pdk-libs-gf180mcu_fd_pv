@@ -68,11 +68,11 @@ if FEOL
 
     # Rule S.CO.6_ii_LV: (ii) If Metal1 overlaps contact by < 0.04um on one side, adjacent metal1 edges overlap is 0.02.um
     logger.info("Executing rule S.CO.6_ii_LV")
-    s_co6_cond_edges = contact_sram.edges.not_outside(contact_sram.enclosed(metal1_sram, 0.04.um, projection).edges)
+    s_co6_cond_edges = contact_sram.edges.not_outside(contact_sram.enclosed(metal1_sram, 0.02.um, projection).edges)
     s_co6_check_corner = s_co6_cond_edges.extended_in(0.002.um)
     s_co6_check = contact_sram.edges.interacting(s_co6_check_corner).not(s_co6_cond_edges)
     s_co6_cond_corner = s_co6_cond_edges.width(0.002.um, angle_limit(135)).polygons
-    s_co6_l1 = s_co6_check.enclosed(metal1_sram.edges, 0.02.um, projection).polygons
+    s_co6_l1 = s_co6_check.enclosed(metal1_sram.edges, 0.04.um, projection).polygons
     s_co6_l2 = contact_sram.interacting(s_co6_cond_corner)
     s_co6_l = s_co6_l1.or(s_co6_l2)
     s_co6_l.output("S.CO.6_ii_LV", "S.CO.6_ii_LV : (ii) If Metal1 overlaps contact by < 0.04um on one side, adjacent metal1 edges overlap: 0.02.um")
