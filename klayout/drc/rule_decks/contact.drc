@@ -34,8 +34,9 @@ if FEOL
 
     # Rule CO.2b: Space in 4x4 or larger contact array. is 0.28µm
     logger.info("Executing rule CO.2b")
-    poss_4_4_contact = contact.sized(0.14, "square_limit").merged.sized(-0.14, "square_limit")
-    co_4x4_loc = poss_4_4_contact.not_interacting(poss_4_4_contact.edges.with_length(nil, 1.715))
+    co2b_egde_length = 0.22*3 + 2*0.28
+    poss_4_4_contact = contact.sized(0.22, "square_limit").merged.sized(-0.22, "square_limit").extents
+    co_4x4_loc = poss_4_4_contact.not_interacting(poss_4_4_contact.edges.with_length(nil, co2b_egde_length)).interacting(contact, 16 .. nil)
     selected_co = contact.interacting(co_4x4_loc)
 
     co2b_l1  = selected_co.space(0.28.um, euclidian).polygons(0.001)
