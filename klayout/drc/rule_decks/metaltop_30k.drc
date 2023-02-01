@@ -74,14 +74,17 @@ if BEOL
         
         # Rule MT30.8: There shall be minimum 2X2 array of vias (top vias) at one location connecting to 3um thick top metal.
         logger.info("Executing rule MT30.8")
+        mt308_egde_length = 0.26*1 + 1*0.26
         top_via_not_seal_ring = top_via.not(guard_ring_mk)
         metal_top_intersections = top_metal.and(topmin1_metal).not(guard_ring_mk).interacting(top_via_not_seal_ring)
         mt308_l1 = metal_top_intersections.interacting(top_via_not_seal_ring, 1, 3)
         mt308_poss_l2 = metal_top_intersections.interacting(top_via_not_seal_ring, 4 .. nil)
         mt308_poss_via = top_via_not_seal_ring.interacting(mt308_poss_l2)
-        mt308_poss_via_over_under = mt308_poss_via.sized(0.13, "square_limit").merged.sized(-0.13, "square_limit")
-        bad_via_array = mt308_poss_via_over_under.interacting(mt308_poss_via_over_under.edges.with_length(nil, 0.775))
-        mt308_l2 = mt308_poss_l2.interacting(bad_via_array)
+        mt308_poss_via_over_under = mt308_poss_via.sized(0.16, "square_limit").merged.sized(-0.16, "square_limit")
+        mt308_all = mt308_poss_via_over_under.with_bbox_min(mt308_egde_length .. nil)
+        mt308_loc_exc = mt308_all.width(mt308_egde_length, projection_limits(mt308_egde_length.. 1000*mt308_egde_length)).polygons
+        mt308_loc = mt308_all.not_interacting(mt308_loc_exc)    
+        mt308_l2 = mt308_poss_l2.not_interacting(mt308_loc)
         mt308_output = mt308_l1.or(mt308_l2)
         mt308_output.output("MT30.8", "MT30.8 : There shall be minimum 2X2 array of vias (top vias) at one location connecting to 3um thick top metal.")
         top_via_not_seal_ring.forget
@@ -90,7 +93,9 @@ if BEOL
         mt308_poss_l2.forget
         mt308_poss_via.forget
         mt308_poss_via_over_under.forget
-        bad_via_array.forget
+        mt308_all.forget
+        mt308_loc_exc.forget
+        mt308_loc.forget
         mt308_l2.forget
         mt308_output.forget
         
