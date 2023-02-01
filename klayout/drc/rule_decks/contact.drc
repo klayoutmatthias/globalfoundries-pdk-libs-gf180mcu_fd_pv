@@ -34,18 +34,15 @@ if FEOL
 
     # Rule CO.2b: Space in 4x4 or larger contact array. is 0.28µm
     logger.info("Executing rule CO.2b")
-    co2b_egde_length = 0.22*3 + 2*0.28
-    poss_4_4_contact = contact.sized(0.22, "square_limit").merged.sized(-0.22, "square_limit").extents
-    co_4x4_loc = poss_4_4_contact.not_interacting(poss_4_4_contact.edges.with_length(nil, co2b_egde_length)).interacting(contact, 16 .. nil)
-    selected_co = contact.interacting(co_4x4_loc)
-
-    co2b_l1  = selected_co.space(0.28.um, euclidian).polygons(0.001)
+    co2b_egde_length = 0.22*4 + 3*0.28    
+    poss_4_4_contact = contact.sized(0.16, "square_limit").merged.sized(-0.16, "square_limit") 
+    co_4x4_all = poss_4_4_contact.with_bbox_min(co2b_egde_length .. nil).interacting(contact, 16 .. nil) 
+    co_4x4_loc_exc = co_4x4_all.width(co2b_egde_length, projection_limits(co2b_egde_length.. 1000*co2b_egde_length)).polygons
+    co_4x4_loc = co_4x4_all.not_interacting(co_4x4_loc_exc)    
+    selected_co = contact.interacting(co_4x4_loc)    
+    co2b_l1  = selected_co.space(0.28.um, euclidian).polygons(0.001)    
     co2b_l1.output("CO.2b", "CO.2b : Space in 4x4 or larger contact array. : 0.28µm")
-    co2b_l1.forget
-    poss_4_4_contact.forget
-    co_4x4_loc.forget
-    selected_co.forget
-
+    
     # Rule CO.3: Poly2 overlap of contact. is 0.07µm
     logger.info("Executing rule CO.3")
     main_contact = contact.not(sramcore)
