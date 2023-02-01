@@ -28,7 +28,7 @@ if BEOL
 
         # Rule V2.2a: min. via2 spacing is 0.26µm
         logger.info("Executing rule V2.2a")
-        v22a_l1  = via2.space(0.26.um, euclidian).polygons(0.001)
+        v22a_l1  = via2.space(0.26.um, euclidian)
         v22a_l1.output("V2.2a", "V2.2a : min. via2 spacing : 0.26µm")
         v22a_l1.forget
     
@@ -40,7 +40,7 @@ if BEOL
         via2_4x4_loc_exc = via2_4x4_all.width(via2_egde_length, projection_limits(via2_egde_length.. 1000*via2_egde_length)).polygons
         via2_4x4_loc = via2_4x4_all.not_interacting(via2_4x4_loc_exc)
         selected_via2 = via2.interacting(via2_4x4_loc)
-        via2b_l1  = selected_via2.space(0.36.um, euclidian).polygons(0.001)
+        via2b_l1  = selected_via2.space(0.36.um, euclidian)
         via2b_l1.output("V2.2b", "V2.2b : via2 Space in 4x4 or larger via2 array : 0.36µm")
         via2b_l1.forget
         poss_4_4_via2.forget

@@ -39,7 +39,7 @@ if BEOL
     via1_4x4_loc_exc = via1_4x4_all.width(via1_egde_length, projection_limits(via1_egde_length.. 1000*via1_egde_length)).polygons
     via1_4x4_loc = via1_4x4_all.not_interacting(via1_4x4_loc_exc)
     selected_via1 = via1.interacting(via1_4x4_loc)
-    via1b_l1  = selected_via1.space(0.36.um, euclidian).polygons(0.001)
+    via1b_l1  = selected_via1.space(0.36.um, euclidian)
     via1b_l1.output("V1.2b", "V1.2b : Via1 Space in 4x4 or larger via1 array : 0.36µm")
     via1b_l1.forget
     poss_4_4_via1.forget
