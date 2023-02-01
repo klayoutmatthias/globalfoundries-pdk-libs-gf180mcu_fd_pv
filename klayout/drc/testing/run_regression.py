@@ -565,7 +565,7 @@ def draw_polygons(polygon_data, cell, lay_num, lay_dt, path_width):
             ]
             cell.add(gdstk.FlexPath(points, path_width, layer=lay_num, datatype=lay_dt))
     
-    elif "float" in tag :
+    elif "float" or "text" in tag :
         # Known antenna values for antenna ratios
         pass
 
