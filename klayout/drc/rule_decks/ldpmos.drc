@@ -213,11 +213,13 @@ if FEOL
 
     mdp9eii_2.forget
 
-    # Rule MDP.9f: Poly2 interconnect is not allowed in LDPMOS region (LDMOS_XTOR marked region). is -µm
+    # Rule MDP.9f: Poly2 interconnect is not allowed in LDPMOS region (LDMOS_XTOR marked region)
     logger.info("Executing rule MDP.9f")
-    mdp9f_l1 = poly2.not(pplus).inside(dualgate).inside(ldmos_xtor).interacting(poly2.and(pplus).inside(dualgate).inside(ldmos_xtor),2)
-    mdp9f_l1.output("MDP.9f", "MDP.9f : Poly2 interconnect is not allowed in LDPMOS region (LDMOS_XTOR marked region). : -µm")
+    mdp9f_poly = poly2.and(dualgate).and(ldmos_xtor)
+    mdp9f_l1 = mdp9f_poly.not(pplus).interacting(mdp9f_poly.and(pplus),2)
+    mdp9f_l1.output("MDP.9f", "MDP.9f : Poly2 interconnect is not allowed in LDPMOS region (LDMOS_XTOR marked region).")
     mdp9f_l1.forget
+    mdp9f_poly.forget
 
     # Rule MDP.10: Min/Max MVPSD overlap onto the channel (LDMOS_XTOR AND COMP AND POLY2 AND Pplus).
     logger.info("Executing rule MDP.10")
