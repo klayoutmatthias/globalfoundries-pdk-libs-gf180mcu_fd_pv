@@ -30,58 +30,54 @@ if FEOL
 
     # Rule MDP.1: Minimum transistor channel length. is 0.6µm
     logger.info("Executing rule MDP.1")
-    mdp1_l1 = poly_mdp.enclosing(mvpsd, 0.6.um, euclidian).polygons(0.001)
+    mdp1_l1 = mvpsd.enclosed(poly_mdp, 0.6.um, euclidian)
     mdp1_l1.output("MDP.1", "MDP.1 : Minimum transistor channel length. : 0.6µm")
     mdp1_l1.forget
 
     # Rule MDP.1a: Max transistor channel length.
     logger.info("Executing rule MDP.1a")
-    mdp1a_l1 = ldpmos_gate_sides.not(ldpmos.width(20.um + 1.dbu, projection).edges).extended(0, 0, 0.001, 0.001)
+    mdp1a_l1 = ldpmos_gate_sides.not(ldpmos.width(20.um + 1.dbu, projection).edges)
     mdp1a_l1.output("MDP.1a", "MDP.1a : Max transistor channel length.")
     mdp1a_l1.forget
 
     # Rule MDP.2: Minimum transistor channel width. is 4µm
     logger.info("Executing rule MDP.2")
-    mdp2_l1 = ldpmos_gate_ends.and(ldpmos.width(4.um, projection).edges).extended(0, 0, 0.001, 0.001)
+    mdp2_l1 = ldpmos_gate_ends.and(ldpmos.width(4.um, projection).edges)
     mdp2_l1.output("MDP.2", "MDP.2 : Minimum transistor channel width. : 4µm")
     mdp2_l1.forget
 
-    mdp3_1 = ldpmos.or(mvpsd).or(mdp_source).not_interacting(ncomp.holes).inside(dualgate).inside(ldmos_xtor)
-    mdp3_2 = ncomp.holes.not_interacting(ncomp.interacting(mdp_source)).not_interacting(mvpsd,1,1).inside(dualgate).inside(ldmos_xtor)
     # Rule MDP.3: Each LDPMOS shall be surrounded by non-broken Nplus guard ring inside DNWELL
     logger.info("Executing rule MDP.3")
+    mdp3_1 = ldpmos.or(mvpsd).or(mdp_source).and(dualgate).and(ldmos_xtor).not_interacting(ncomp.holes)
+    mdp3_2 = ncomp.holes.and(dualgate).and(ldmos_xtor).not_interacting(ncomp.interacting(mdp_source)).not_interacting(mvpsd,1,1)
     mdp3_l1 = mdp3_1.or(mdp3_2)
     mdp3_l1.output("MDP.3", "MDP.3 : Each LDPMOS shall be surrounded by non-broken Nplus guard ring inside DNWELL")
     mdp3_l1.forget
 
-    ncomp_mdp3ai = ncomp.not_interacting(pcomp).inside(ldmos_xtor).inside(dualgate)
     # Rule MDP.3ai: Min NCOMP (Nplus AND COMP) space to MVPSD (source and body tap non-butted). NCOMP (Nplus AND COMP) intercept with MVPSD is not allowed.
     logger.info("Executing rule MDP.3ai")
+    ncomp_mdp3ai = ncomp.not_interacting(pcomp).and(ldmos_xtor).and(dualgate)
     mdp3ai_l1 = ncomp_mdp3ai.separation(mvpsd, 1.um, euclidian).polygons(0.001).or(mvpsd.interacting(ncomp_mdp3ai))
     mdp3ai_l1.output("MDP.3ai", "MDP.3ai : Min NCOMP (Nplus AND COMP) space to MVPSD (source and body tap non-butted). NCOMP (Nplus AND COMP) intercept with MVPSD is not allowed.")
     mdp3ai_l1.forget
-
     ncomp_mdp3ai.forget
 
-    ncomp_mdp3aii = ncomp.interacting(pcomp).inside(ldmos_xtor).inside(dualgate)
     # Rule MDP.3aii: Min NCOMP (Nplus AND COMP) space to MVPSD (source and body tap butted). NCOMP (Nplus AND COMP) intercept with MVPSD is not allowed.
     logger.info("Executing rule MDP.3aii")
+    ncomp_mdp3aii = ncomp.interacting(pcomp).and(ldmos_xtor).and(dualgate)
     mdp3aii_l1 = ncomp_mdp3aii.separation(mvpsd, 0.92.um, euclidian).polygons(0.001).or(mvpsd.interacting(ncomp_mdp3aii))
     mdp3aii_l1.output("MDP.3aii", "MDP.3aii : Min NCOMP (Nplus AND COMP) space to MVPSD (source and body tap butted). NCOMP (Nplus AND COMP) intercept with MVPSD is not allowed.")
     mdp3aii_l1.forget
-
     ncomp_mdp3aii.forget
 
-    ncomp_mdp3b = ncomp.inside(ldmos_xtor).inside(dualgate)
-    pcomp_mdp3b = pcomp.inside(dnwell).inside(ldmos_xtor).inside(dualgate)
+    ncomp_mdp3b = ncomp.and(ldmos_xtor).and(dualgate)
+    pcomp_mdp3b = pcomp.inside(dnwell).and(ldmos_xtor).and(dualgate)
     # Rule MDP.3b: Min NCOMP (Nplus AND COMP) space to PCOMP in DNWELL (Pplus AND COMP AND DNWELL). Use butted source and DNWELL contacts otherwise and that is best for Latch-up immunity as well. is 0.4µm
     logger.info("Executing rule MDP.3b")
     mdp3b_l1  = ncomp_mdp3b.not(poly2).not(mvpsd).separation(pcomp_mdp3b.not(poly2).not(mvpsd), 0.4.um, euclidian).polygons(0.001)
     mdp3b_l1.output("MDP.3b", "MDP.3b : Min NCOMP (Nplus AND COMP) space to PCOMP in DNWELL (Pplus AND COMP AND DNWELL). Use butted source and DNWELL contacts otherwise and that is best for Latch-up immunity as well. : 0.4µm")
     mdp3b_l1.forget
-
     ncomp_mdp3b.forget
-
     pcomp_mdp3b.forget
 
     # Rule MDP.3c: Maximum distance of the nearest edge of the DNWELL tab (NCOMP inside DNWELL) from PCOMP edge (PCOMP inside DNWELL). is 15µm
@@ -96,9 +92,9 @@ if FEOL
     mdp3d_l1.output("MDP.3d", "MDP.3d : The metal connection for the Nplus guard ring recommended to be continuous. The maximum gap between this metal if broken. Note: To put maximum number of contact under metal for better manufacturability and reliability. : 10µm")
     mdp3d_l1.forget
 
-    mdp4_metal = pcomp.not_interacting(mvpsd).interacting(ldmos_xtor.interacting(mvpsd)).interacting(dualgate).not(metal1).edges.not(metal1).with_length(10.001.um, nil)
     # Rule MDP.4: DNWELL covering LDPMOS shall be surrounded by non broken Pplus guard. The metal connection for the Pplus guard ring recommended to be continuous, The maximum gap between this metal if broken. Note: To put maximum number of contact under metal for better manufacturability and reliability.
     logger.info("Executing rule MDP.4")
+    mdp4_metal = pcomp.not_interacting(mvpsd).interacting(ldmos_xtor.interacting(mvpsd)).interacting(dualgate).not(metal1).edges.not(metal1).with_length(10.001.um, nil)
     mdp4_l1 = pcomp.interacting(metal1).not_interacting(pcomp.holes).edges.and(ldmos_xtor).and(dualgate).or(mdp4_metal)
     mdp4_l1.output("MDP.4", "MDP.4 : DNWELL covering LDPMOS shall be surrounded by non broken Pplus guard. The metal connection for the Pplus guard ring recommended to be continuous, The maximum gap between this metal if broken. Note: To put maximum number of contact under metal for better manufacturability and reliability.")
     mdp4_l1.forget
@@ -111,16 +107,14 @@ if FEOL
     mdp4a_l1.output("MDP.4a", "MDP.4a : Min PCOMP (Pplus AND COMP) space to DNWELL. : 2.5µm")
     mdp4a_l1.forget
 
-    mdp4b_dnwell_edges = dnwell.inside(ldmos_xtor).inside(dualgate).edges.centers(0, 0.99)
-    mdp4b_not_error = dnwell.drc(separation(pcomp.inside(ldmos_xtor.interacting(mvpsd)).inside(dualgate).not_interacting(mvpsd), euclidian) <= 15.um).polygons(0.001)
     # Rule MDP.4b: Maximum distance of the nearest edge of the DNWELL from the PCOMP Guard ring outside DNWELL. is 15µm
     logger.info("Executing rule MDP.4b")
+    mdp4b_dnwell_edges = dnwell.inside(ldmos_xtor).inside(dualgate).edges.centers(0, 0.99)
+    mdp4b_not_error = dnwell.drc(separation(pcomp.inside(ldmos_xtor.interacting(mvpsd)).inside(dualgate).not_interacting(mvpsd), euclidian) <= 15.um).polygons(0.001)  
     mdp4b_l1 = mdp4b_dnwell_edges.not_interacting(mdp4b_not_error).and(pcomp.holes).extended(0, 0, 0.001, 0.001)
     mdp4b_l1.output("MDP.4b", "MDP.4b : Maximum distance of the nearest edge of the DNWELL from the PCOMP Guard ring outside DNWELL. : 15µm")
     mdp4b_l1.forget
-
     mdp4b_dnwell_edges.forget
-
     mdp4b_not_error.forget
 
     # Rule MDP.5: Each LDPMOS shall be covered by Dualgate layer.
@@ -169,16 +163,14 @@ if FEOL
     mdp9a_l1.output("MDP.9a", "MDP.9a : Min LDPMOS POLY2 width. : 1.2µm")
     mdp9a_l1.forget
 
-    mdp9b_1 = poly2.inside(dnwell.and(dualgate).and(ldmos_xtor)).edges.interacting(mvpsd).not(mvpsd).enclosing(comp.edges,0.4.um).edges
-    mdp9b_2 = poly2.inside(dnwell.and(dualgate).and(ldmos_xtor)).edges.interacting(mvpsd).not(mvpsd).interacting(pcomp)
     # Rule MDP.9b: Min POLY2 extension beyond COMP in the width direction of the transistor (other than the LDMOS drain direction). is 0.4µm
     logger.info("Executing rule MDP.9b")
+    mdp9b_1 = poly2.inside(dnwell.and(dualgate).and(ldmos_xtor)).edges.interacting(mvpsd).not(mvpsd).enclosing(comp.edges,0.4.um).edges
+    mdp9b_2 = poly2.inside(dnwell.and(dualgate).and(ldmos_xtor)).edges.interacting(mvpsd).not(mvpsd).interacting(pcomp)
     mdp9b_l1 = mdp9b_1.or(mdp9b_2).extended(0,0,0.001,0.001)
     mdp9b_l1.output("MDP.9b", "MDP.9b : Min POLY2 extension beyond COMP in the width direction of the transistor (other than the LDMOS drain direction). : 0.4µm")
     mdp9b_l1.forget
-
     mdp9b_1.forget
-
     mdp9b_2.forget
 
     # Rule MDP.9c: Min/Max POLY2 extension beyond COMP on the field towards LDPMOS drain (MVPSD AND COMP AND Pplus NOT POLY2) direction.
@@ -193,27 +185,24 @@ if FEOL
     mdp9d_l1.output("MDP.9d", "MDP.9d : Min/Max POLY2 on field to LDPMOS drain COMP (MVPSD AND COMP AND Pplus NOT POLY2) space.")
     mdp9d_l1.forget
 
+    # Rule MDP.9ei: Min LDMPOS gate Poly2 space to Nplus guardring (source and body tap non-butted).
     ldpmos_poly2_gate = poly2.interacting(pgate.and(dualgate).not(mvpsd))
     ncomp_not_butted = ncomp.not(pplus).not_interacting(pcomp.not(nplus)).or(ncomp.not(pplus).overlapping(pcomp.not(nplus)))
     mdp9ei_1         = ldpmos_poly2_gate.inside(dualgate).inside(ldmos_xtor).separation(ncomp_not_butted, 0.4.um).polygons(0.001)
     mdp9ei_2         = ldpmos_poly2_gate.inside(dualgate).inside(ldmos_xtor).and(ncomp_not_butted)
-    # Rule MDP.9ei: Min LDMPOS gate Poly2 space to Nplus guardring (source and body tap non-butted).
     logger.info("Executing rule MDP.9ei")
     mdp9ei_l1 = mdp9ei_1.or(mdp9ei_2)
     mdp9ei_l1.output("MDP.9ei", "MDP.9ei : Min LDMPOS gate Poly2 space to Nplus guardring (source and body tap non-butted).")
     mdp9ei_l1.forget
-
     ncomp_not_butted.forget
-
     mdp9ei_1.forget
-
     mdp9ei_2.forget
 
+    # Rule MDP.9eii: Min LDMPOS gate Poly2 space to Nplus guardring (source and body tap butted).
+    logger.info("Executing rule MDP.9eii")
     ncomp_butted = ncomp.not(pplus).interacting(pcomp.not(nplus)).not_overlapping(pcomp.not(nplus))
     mdp9eii_1    = ldpmos_poly2_gate.inside(dualgate).inside(ldmos_xtor).separation(ncomp_butted, 0.32.um).polygons(0.001)
     mdp9eii_2    = ldpmos_poly2_gate.inside(dualgate).inside(ldmos_xtor).and(ncomp_butted)
-    # Rule MDP.9eii: Min LDMPOS gate Poly2 space to Nplus guardring (source and body tap butted).
-    logger.info("Executing rule MDP.9eii")
     mdp9eii_l1 = mdp9eii_1.or(mdp9eii_2)
     mdp9eii_l1.output("MDP.9eii", "MDP.9eii : Min LDMPOS gate Poly2 space to Nplus guardring (source and body tap butted).")
     mdp9eii_l1.forget
@@ -237,30 +226,30 @@ if FEOL
     mdp10_l1.forget
 
     if CONNECTIVITY_RULES
-    logger.info("CONNECTIVITY_RULES section")
+        logger.info("CONNECTIVITY_RULES section")
 
-    connected_mdp_10b, unconnected_mdp_10a = conn_space(mvpsd, 1, 2, euclidian)
+        connected_mdp_10b, unconnected_mdp_10a = conn_space(mvpsd, 1, 2, euclidian)
 
-    # Rule MDP.10a: Min MVPSD space within LDMOS_XTOR marking [diff potential]. is 2µm
-    logger.info("Executing rule MDP.10a")
-    mdp10a_l1  = unconnected_mdp_10a
-    mdp10a_l1.output("MDP.10a", "MDP.10a : Min MVPSD space within LDMOS_XTOR marking [diff potential]. : 2µm")
-    mdp10a_l1.forget
+        # Rule MDP.10a: Min MVPSD space within LDMOS_XTOR marking [diff potential]. is 2µm
+        logger.info("Executing rule MDP.10a")
+        mdp10a_l1  = unconnected_mdp_10a
+        mdp10a_l1.output("MDP.10a", "MDP.10a : Min MVPSD space within LDMOS_XTOR marking [diff potential]. : 2µm")
+        mdp10a_l1.forget
 
-    # Rule MDP.10b: Min MVPSD space [same potential]. Merge if space less than 1um. is 1µm
-    logger.info("Executing rule MDP.10b")
-    mdp10b_l1  = connected_mdp_10b
-    mdp10b_l1.output("MDP.10b", "MDP.10b : Min MVPSD space [same potential]. Merge if space less than 1um. : 1µm")
-    mdp10b_l1.forget
+        # Rule MDP.10b: Min MVPSD space [same potential]. Merge if space less than 1um. is 1µm
+        logger.info("Executing rule MDP.10b")
+        mdp10b_l1  = connected_mdp_10b
+        mdp10b_l1.output("MDP.10b", "MDP.10b : Min MVPSD space [same potential]. Merge if space less than 1um. : 1µm")
+        mdp10b_l1.forget
 
     else
-    logger.info("CONNECTIVITY_RULES disabled section")
+        logger.info("CONNECTIVITY_RULES disabled section")
 
-    # Rule MDP.10a: Min MVPSD space within LDMOS_XTOR marking [diff potential]. is 2µm
-    logger.info("Executing rule MDP.10a")
-    mdp10a_l1  = mvpsd.space(2.um, euclidian).polygons(0.001)
-    mdp10a_l1.output("MDP.10a", "MDP.10a : Min MVPSD space within LDMOS_XTOR marking [diff potential]. : 2µm")
-    mdp10a_l1.forget
+        # Rule MDP.10a: Min MVPSD space within LDMOS_XTOR marking [diff potential]. is 2µm
+        logger.info("Executing rule MDP.10a")
+        mdp10a_l1  = mvpsd.space(2.um, euclidian).polygons(0.001)
+        mdp10a_l1.output("MDP.10a", "MDP.10a : Min MVPSD space within LDMOS_XTOR marking [diff potential]. : 2µm")
+        mdp10a_l1.forget
 
     end #CONNECTIVITY_RULES
 
@@ -294,13 +283,12 @@ if FEOL
     mdp13b_l1.output("MDP.13b", "MDP.13b : Layout shall have alternative source & drain.")
     mdp13b_l1.forget
 
-    mdp_13c_source_side = ldpmos.interacting(mdp_source.interacting(ldpmos, 2, 2).or(mdp_source.interacting(ncomp.interacting(mdp_source, 2, 2))))
     # Rule MDP.13c: Both sides of the transistor shall be terminated by source.
     logger.info("Executing rule MDP.13c")
+    mdp_13c_source_side = ldpmos.interacting(mdp_source.interacting(ldpmos, 2, 2).or(mdp_source.interacting(ncomp.interacting(mdp_source, 2, 2))))
     mdp13c_l1 = mvpsd.covering(pcomp.not_interacting(poly2)).interacting(pcomp, 2, 2).interacting(mdp_13c_source_side)
     mdp13c_l1.output("MDP.13c", "MDP.13c : Both sides of the transistor shall be terminated by source.")
     mdp13c_l1.forget
-
     mdp_13c_source_side.forget
 
     # rule MDP.14 is not a DRC check
@@ -323,16 +311,14 @@ if FEOL
     mdp16b_l1.output("MDP.16b", "MDP.16b : Min LDPMOS drain COMP enclose contact. : 0µm")
     mdp16b_l1.forget
 
-    mdp17_a1 = mvpsd.inside(dnwell).inside(ldmos_xtor)
-    mdp17_a2 = ncomp.outside(dnwell).outside(nwell)
     # Rule MDP.17a: For better latch up immunity, it is necessary to put DNWELL guard ring between MVPSD Inside DNWELL covered by LDMOS_XTOR and NCOMP (outside DNWELL and outside Nwell) when spacing between them is less than 40um.
     logger.info("Executing rule MDP.17a")
+    mdp17_a1 = mvpsd.inside(dnwell).inside(ldmos_xtor)
+    mdp17_a2 = ncomp.outside(dnwell).outside(nwell)
     mdp17a_l1 = mdp17_a1.separation(mdp17_a2,transparent,40.um).polygons(0.001).not_interacting(ncomp.and(dnwell).holes)
     mdp17a_l1.output("MDP.17a", "MDP.17a : For better latch up immunity, it is necessary to put DNWELL guard ring between MVPSD Inside DNWELL covered by LDMOS_XTOR and NCOMP (outside DNWELL and outside Nwell) when spacing between them is less than 40um.")
     mdp17a_l1.forget
-
     mdp17_a1.forget
-
     mdp17_a2.forget
 
     # Rule MDP.17c: DNWELL guard ring shall have NCOMP tab to be connected to highest potential
